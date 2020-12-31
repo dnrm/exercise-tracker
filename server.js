@@ -97,36 +97,50 @@ app.post('/api/exercise/add', (req, res) => {
 });
 
 app.get('/api/exercise/log', (req, res) => {
-  console.log(req.query)
   User.findById(req.query.userId, (err, success) => {
     if (err) return console.log(err);
     let username = success.username;
-    let from = req.query.from ? new Date(req.query.from).toDateString() : new Date("1970-01-01").toDateString();
-    let to = req.query.to ? new Date(req.query.to).toDateString() : new Date().toDateString();
-    console.log(from , to)
+    let from = req.query.from;
+    let to = req.query.to;
     let limit = req.query.limit || 1000;
 
     if (limit == undefined) {
       limit = 1000;
     }
 
-    if (from && to) {
-      console.log("with from and to")
-      Exercise.find({ username: username, date: { $gte: from, $lte: to }})
-      .limit(limit + 1)
-      .exec((err, doc) => {
-        const response = {
-          _id: req.query.userId,
-          username,
-          from,
-          to,
-          count: doc.length || 0,
-          log: doc || []
+      Exercise.find({ username: username }, (err, doc) => {
+
+        if (from) {
+          let dateFrom = new Date(from).getTime();
+          doc = doc.filter(item => {
+            let docDate = new Date(item.date).getTime();
+            console.log(`${docDate} >= ${dateFrom} is greater than: ${docDate >= dateFrom}`);
+            return docDate >= dateFrom
+          });
         }
-        console.log(response);
+
+        if (to) {
+          let dateTo = new Date(to).getTime();
+          doc = doc.filter(item => {
+            let docDate = new Date(item.date).getTime();
+            console.log(`${docDate} <= ${dateTo} is less or equal than: ${docDate >= dateTo}`);
+            return docDate <= dateTo
+          });
+        }
+
+        if (limit) {
+          doc = doc.slice(0, limit);
+        }
+
+        const response = {
+          "_id": success["_id"],
+          username,
+          count: doc.length,
+          log: doc
+        }
+
         res.send(response);
-      });
-    }
+    });
   });
 })
 
