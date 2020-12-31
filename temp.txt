@@ -1,0 +1,1 @@
+date: { $gte: new Date(from).toDateString(), $lte: new Date(to).toDateString() }
